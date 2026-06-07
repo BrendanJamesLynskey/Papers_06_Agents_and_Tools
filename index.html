@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papers 06 — Agents &amp; Tool Use</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-card: #0d1117;
+            --bg-code: #161b22;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #76B900;
+            --accent-dim: #76B90044;
+            --accent-glow: #76B90033;
+            --border: #21262d;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-body: 'Inter', sans-serif;
+            --max-width: 900px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 17px;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > * { position: relative; z-index: 1; }
+        .series-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        .hero h1 .accent { color: var(--accent); }
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin-bottom: 2rem;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            white-space: nowrap;
+        }
+        .pipeline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            max-width: var(--max-width);
+        }
+        .pipeline-step {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 0.3rem 0.7rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .pipeline-arrow { color: var(--accent); font-size: 0.9rem; font-weight: 700; }
+        .slide {
+            min-height: 100vh;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .slide-number {
+            font-family: var(--font-display);
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--accent-dim);
+            position: absolute;
+            top: 2rem;
+            right: 1.5rem;
+            line-height: 1;
+            user-select: none;
+        }
+        .slide h2 {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            line-height: 1.25;
+        }
+        .slide h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .slide p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .slide p strong { color: var(--text-primary); }
+        .slide ul, .slide ol { margin-bottom: 1rem; padding-left: 1.5rem; color: var(--text-secondary); }
+        .slide li { margin-bottom: 0.4rem; }
+        .slide li strong { color: var(--text-primary); }
+        .slide code {
+            font-family: var(--font-mono);
+            font-size: 0.88em;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            padding: 0.05rem 0.35rem;
+            border-radius: 3px;
+            color: #c9d1d9;
+        }
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1.25rem 0;
+            overflow: hidden;
+        }
+        .code-header {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: rgba(118, 185, 0, 0.08);
+            padding: 0.4rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .code-block pre { margin: 0; padding: 1rem; overflow-x: auto; }
+        .code-block code {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #c9d1d9;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+        .kw { color: #ff7b72; }
+        .fn { color: #d2a8ff; }
+        .str { color: #a5d6ff; }
+        .cm { color: #8b949e; font-style: italic; }
+        .num { color: #79c0ff; }
+        .type { color: #ffa657; }
+        .dir { color: #ff7b72; }
+        .mac { color: #ffa657; }
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th {
+            background: var(--bg-code);
+            color: var(--accent);
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-display);
+            white-space: nowrap;
+        }
+        td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: rgba(13, 17, 23, 0.5); }
+        .diagram-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-box {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .diagram-box.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .diagram-box.dim { color: var(--text-secondary); border-color: var(--border); }
+        .diagram-arrow { color: var(--accent); font-size: 1.3rem; font-weight: 700; }
+        .diagram-vertical {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-vertical .diagram-arrow { font-size: 1.1rem; }
+        .hierarchy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .hierarchy-level { display: flex; align-items: center; gap: 0.75rem; }
+        .hierarchy-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 80px;
+            text-align: right;
+        }
+        .hierarchy-items { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .hierarchy-item {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .hierarchy-item.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .diagram-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+        .diagram-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .diagram-panel {
+            padding: 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .diagram-panel.accent-border { border-left: 3px solid var(--accent); }
+        .diagram-panel h4 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        .diagram-panel p, .diagram-panel ul { font-size: 0.85rem; }
+        .callout {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+        }
+        .callout p { margin-bottom: 0; }
+        .callout p + p { margin-top: 0.5rem; }
+        .callout .callout-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.3rem;
+        }
+        .contents-list { list-style: none; padding-left: 0; counter-reset: contents; }
+        .contents-list li {
+            counter-increment: contents;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .contents-list li:last-child { border-bottom: none; }
+        .contents-list li::before {
+            content: counter(contents, decimal-leading-zero);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            min-width: 2rem;
+        }
+        .contents-list a { color: var(--text-primary); text-decoration: none; transition: color 0.2s; }
+        .contents-list a:hover { color: var(--accent); }
+        .footer {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .canvas-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.25rem 0;
+            overflow-x: auto;
+        }
+        .canvas-wrap canvas, .canvas-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+        .badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            vertical-align: middle;
+            margin-left: 0.3rem;
+        }
+        .badge.ok    { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .badge.warn  { border-color: #ffa657; color: #ffa657; background: rgba(255,166,87,0.08); }
+        .badge.bad   { border-color: #ff7b72; color: #ff7b72; background: rgba(255,123,114,0.08); }
+        @media (max-width: 640px) {
+            .slide { padding: 3rem 1rem; min-height: auto; }
+            .slide-number { font-size: 3rem; top: 1.5rem; right: 1rem; }
+            .slide h2 { font-size: 1.5rem; }
+            .diagram-grid.cols-2, .diagram-grid.cols-3 { grid-template-columns: 1fr; }
+            .pipeline { gap: 0.15rem; }
+            .pipeline-step { font-size: 0.6rem; padding: 0.2rem 0.4rem; }
+            .hero h1 { font-size: 1.8rem; }
+            table { font-size: 0.78rem; }
+        }
+    </style>
+</head>
+<body>
+<header class="hero">
+    <div class="series-label">Key LLM Publications Series &mdash; Presentation 06</div>
+    <h1>Agents &amp; <span class="accent">Tool Use</span></h1>
+    <p class="subtitle">From a single reasoning trace to autonomous, self-correcting systems: ReAct, Toolformer, Reflexion, the agent design patterns that actually work, and the open protocol (MCP) that standardises how it all connects.</p>
+    <div class="tags">
+        <span class="tag">ReAct</span>
+        <span class="tag">Toolformer</span>
+        <span class="tag">Reflexion</span>
+        <span class="tag">Agent Patterns</span>
+        <span class="tag">MCP</span>
+        <span class="tag">Tool Use</span>
+    </div>
+    <div class="pipeline">
+        <span class="pipeline-step">Reason</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Act / Tool Call</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Observe</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Reflect</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Standard Protocol (MCP)</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>The Five Publications</h2>
+    <p>Five works trace the arc from a clever prompting pattern to a production-grade, vendor-neutral standard. Three are arXiv papers that established the core loops; two are industry pieces &mdash; Anthropic's engineering writing on what actually works in practice, and the open protocol that the ecosystem has now standardised on. The series covers papers, articles and blogs alike.</p>
+    <ul class="contents-list">
+        <li><a href="#slide-01">ReAct &mdash; Synergizing Reasoning and Acting</a></li>
+        <li><a href="#slide-02">Toolformer &mdash; LMs Teaching Themselves to Use Tools</a></li>
+        <li><a href="#slide-03">Reflexion &mdash; Language Agents with Verbal Reinforcement Learning</a></li>
+        <li><a href="#slide-04">Building Effective Agents &mdash; Workflows vs Agents</a></li>
+        <li><a href="#slide-05">Model Context Protocol &mdash; USB-C for AI</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>ReAct &mdash; Synergizing Reasoning and Acting in Language Models</h2>
+    <p>Yao et al. (Princeton / Google) &middot; 2022 &middot; <code>arXiv:2210.03629</code> <span class="badge ok">arXiv</span></p>
+
+    <h3>The problem</h3>
+    <p>Chain-of-Thought reasons beautifully but in a vacuum &mdash; it cannot consult the world, so its intermediate "facts" are whatever the model believes, and errors compound into confident hallucination. Pure action agents (e.g. WebGPT-style policies) can call tools but have no explicit, inspectable reasoning to decide <em>which</em> action and <em>why</em>. The two capabilities had been studied apart.</p>
+
+    <h3>The contribution</h3>
+    <p>ReAct interleaves free-form <strong>reasoning traces</strong> ("thoughts") with concrete <strong>actions</strong> (tool / API / environment calls) and the resulting <strong>observations</strong>, in a single decoding loop: <em>Thought &rarr; Action &rarr; Observation &rarr; Thought &rarr; &hellip;</em>. The thought decides the next action; the observation grounds the next thought. On HotpotQA and FEVER it cuts hallucination versus CoT; on the ALFWorld and WebShop interactive benchmarks it beats imitation- and RL-based agents with only a handful of in-context exemplars.</p>
+
+    <div class="diagram-vertical">
+        <div class="diagram-box accent">Thought&nbsp;&mdash;&nbsp;"I should look up X"</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box">Action&nbsp;&mdash;&nbsp;search[X]</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box dim">Observation&nbsp;&mdash;&nbsp;tool result</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box accent">Thought&nbsp;&mdash;&nbsp;"Now I need Y&hellip;"</div>
+        <div class="diagram-arrow">&#8635;&nbsp;loop until&nbsp;Action = finish[answer]</div>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>This is the blueprint behind virtually every modern agent loop &mdash; LangChain/LangGraph "agent executors", OpenAI/Anthropic tool-calling loops, and ROS-style think-act controllers all descend from it. The practical lesson: <strong>ground reasoning in tool feedback</strong>. An observation from a real tool is worth more than ten lines of speculative chain-of-thought, and the explicit thought line is what makes an agent's behaviour debuggable in your traces.</p>
+
+    <div class="callout">
+        <div class="callout-label">Engineering takeaway</div>
+        <p>Keep the thought as a first-class, logged field in your trajectory, not a hidden prefix. When an agent misbehaves, the failing <em>Thought&nbsp;&rarr;&nbsp;Action</em> transition is almost always where the bug lives &mdash; a wrong tool choice, a malformed argument, or a thought that ignored the last observation.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Toolformer &mdash; Language Models Can Teach Themselves to Use Tools</h2>
+    <p>Schick et al. (Meta AI) &middot; 2023 &middot; <code>arXiv:2302.04761</code> <span class="badge ok">arXiv</span></p>
+
+    <h3>The problem</h3>
+    <p>Tool use is usually taught by either hand-written demonstrations or expensive human annotation of when to call what. Neither scales, and both bake in a human's guess of which calls help. Could a model decide for itself &mdash; learning <em>which</em> tool, with <em>what</em> arguments, and crucially <em>when</em> &mdash; from raw text alone?</p>
+
+    <h3>The contribution</h3>
+    <p>A self-supervised loop. The model samples candidate API calls inline in ordinary text, executes them, and keeps only the calls whose returned result <strong>reduces the next-token loss</strong> on the surrounding text &mdash; i.e. calls that demonstrably help prediction. It then fine-tunes on this filtered, self-annotated corpus. The result: a model that has taught itself to use a calculator, a search engine, a QA system, a calendar, and a translation API, with no human tool-use labels.</p>
+
+    <div class="diagram-flow">
+        <div class="diagram-box">Plain text</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Sample candidate<br><small>API calls</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box">Execute &amp;<br><small>insert result</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Keep if loss&nbsp;&darr;<br><small>filter by &Delta;L</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box">Fine-tune on<br><small>kept calls</small></div>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>Toolformer reframes "when should the model call a tool?" as a measurable, data-driven question rather than a prompt-engineering art. The filtering criterion &mdash; <strong>does the tool result actually improve the prediction?</strong> &mdash; is a clean, transferable principle: it is exactly the signal you want when curating tool-use fine-tuning data or pruning a bloated tool list that the model invokes for no benefit.</p>
+
+    <div class="callout">
+        <div class="callout-label">Engineering takeaway</div>
+        <p>More tools is not better. A tool earns its place only if calling it measurably improves outcomes; otherwise it just enlarges the action space and the model's chance to pick wrong. Toolformer's loss-reduction filter is a principled way to ask that question of every tool you expose.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Reflexion &mdash; Language Agents with Verbal Reinforcement Learning</h2>
+    <p>Shinn et al. (Northeastern / MIT) &middot; 2023 &middot; <code>arXiv:2303.11366</code> <span class="badge ok">arXiv</span></p>
+
+    <h3>The problem</h3>
+    <p>A ReAct agent that fails a task has no built-in way to <em>learn</em> from that failure within a session. Reinforcement learning could improve it, but updating weights from sparse, expensive reward signals is slow and impractical for a deployed LLM agent. How do you get the benefit of RL &mdash; learning from outcome feedback &mdash; without touching the weights?</p>
+
+    <h3>The contribution</h3>
+    <p>"Verbal reinforcement learning." After a failed trajectory, the agent generates a natural-language <strong>self-reflection</strong> ("I failed because I searched the wrong term; next time I should&hellip;") and stores it in an <strong>episodic memory</strong>. That reflection is prepended to the context on the next attempt, conditioning behaviour without any gradient step. On multi-trial benchmarks (HumanEval coding, ALFWorld, HotpotQA) this delivers large gains &mdash; e.g. pass rates rising sharply over a few retries.</p>
+
+    <div class="diagram-flow">
+        <div class="diagram-box accent">Attempt task</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box">Evaluate<br><small>self / external</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Reflect<br><small>verbal feedback</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box dim">Store in<br><small>episodic memory</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Retry<br><small>memory in context</small></div>
+        <div class="diagram-arrow">&#8635;</div>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>Reflexion is the cheapest "learning" you can add to an agent: it costs context tokens, not training runs. The pattern &mdash; <strong>evaluate &rarr; reflect in natural language &rarr; carry the lesson forward</strong> &mdash; is the basis of retry loops, self-critique, and the "memory" features in modern agent frameworks. The catch is the evaluator: gains are only as good as the signal telling the agent it failed (unit tests, a verifier, or an LLM-as-judge).</p>
+
+    <div class="callout">
+        <div class="callout-label">Engineering takeaway</div>
+        <p>Don't just retry on failure &mdash; retry with a written reason. A reflection that names the specific cause of failure and a corrective plan is far more effective than a blind re-run, and it gives you a human-readable audit trail of how the agent course-corrected.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Building Effective Agents &mdash; Workflows vs Agents</h2>
+    <p>Anthropic Engineering &middot; 2024 &middot; <a href="https://www.anthropic.com/research/building-effective-agents" style="color:var(--accent);">anthropic.com/research/building-effective-agents</a> <span class="badge ok">Anthropic</span></p>
+
+    <h3>The problem</h3>
+    <p>By 2024 "agent" had become a marketing word stretched over everything from a single tool call to a fully autonomous loop. Teams were reaching for elaborate, autonomous, multi-agent architectures where a simple deterministic pipeline would have been more reliable, cheaper and easier to debug. The field needed a sober vocabulary and a sense of when complexity is actually warranted.</p>
+
+    <h3>The contribution</h3>
+    <p>A clean distinction: <strong>workflows</strong> orchestrate LLMs and tools through <em>predefined</em> code paths; <strong>agents</strong> dynamically direct their own process and tool use. It then catalogues the composable building blocks &mdash; and argues for the <strong>simplest design that works</strong>, adding agency only when the task genuinely demands open-ended decision-making.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Prompt chaining</h4>
+            <p>Decompose into a fixed sequence of steps, each feeding the next; optional gate checks between stages.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Routing</h4>
+            <p>Classify the input, then dispatch to a specialised prompt / model / tool path.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Parallelisation</h4>
+            <p>Run subtasks concurrently (sectioning) or vote across runs, then aggregate.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Orchestrator&ndash;workers</h4>
+            <p>A central LLM dynamically breaks the task down and delegates to worker calls.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Evaluator&ndash;optimiser</h4>
+            <p>One LLM produces, another critiques against criteria; loop until the bar is met.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Autonomous agent</h4>
+            <p>Open-ended loop with tools and environment feedback &mdash; use only when paths can't be predefined.</p>
+        </div>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>This is the most directly actionable piece in the deck. It gives you a shared design language and a default bias toward simplicity: most "agent" requirements are met by a workflow of the patterns above, which are more predictable and cheaper to run. Reach for a true autonomous loop only when the task space is genuinely open-ended &mdash; and even then, invest in guardrails, observability and a stopping condition.</p>
+
+    <div class="callout">
+        <div class="callout-label">Engineering takeaway</div>
+        <p>Start with the simplest pattern that could work and add agency only when measured behaviour demands it. Every increment of autonomy buys capability at the cost of predictability, latency and debuggability &mdash; pay for it deliberately, not by default.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Model Context Protocol &mdash; USB-C for AI</h2>
+    <p>Anthropic &middot; 2024 &middot; <a href="https://modelcontextprotocol.io" style="color:var(--accent);">modelcontextprotocol.io</a> &middot; <a href="https://www.anthropic.com/news/model-context-protocol" style="color:var(--accent);">announcement</a> <span class="badge ok">Anthropic</span></p>
+
+    <h3>The problem</h3>
+    <p>Every tool integration was bespoke. Connecting <em>M</em> LLM applications to <em>N</em> data sources and tools meant <em>M&times;N</em> one-off connectors, each coupled to a particular model's calling convention. Integrations were not portable across vendors, and every new app re-implemented the same plumbing for files, databases and APIs.</p>
+
+    <h3>The contribution</h3>
+    <p>An <strong>open standard</strong> &mdash; "USB-C for AI" &mdash; that decouples integrations from any single model. MCP defines a <strong>JSON-RPC client&ndash;server protocol</strong> in which a host application runs clients that connect to servers, and each server exposes three primitives: <strong>tools</strong> (callable functions), <strong>resources</strong> (readable data / context), and <strong>prompts</strong> (reusable templates). Write a server once; any MCP-compatible host can use it.</p>
+
+    <div class="diagram-flow">
+        <div class="diagram-box accent">Host + Client<br><small>(LLM app)</small></div>
+        <div class="diagram-arrow">&harr;</div>
+        <div class="diagram-box">MCP<br><small>JSON-RPC</small></div>
+        <div class="diagram-arrow">&harr;</div>
+        <div class="diagram-box accent">Server A<br><small>tools</small></div>
+        <div class="diagram-box accent">Server B<br><small>resources</small></div>
+        <div class="diagram-box accent">Server C<br><small>prompts</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box dim">Files / DB / APIs</div>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>MCP is the integration layer the other four publications were missing. ReAct/Reflexion give you the loop, Toolformer the discipline of which tools earn their place, Anthropic's patterns the architecture &mdash; MCP is how you <strong>plug tools and data in once and reuse them everywhere</strong>, independent of model or vendor. For anyone building agentic systems, an MCP server is now the natural unit of reusable capability.</p>
+
+    <div class="callout">
+        <div class="callout-label">Engineering takeaway</div>
+        <p>Treat capabilities as MCP servers, not as code wired into one app. The three primitives map cleanly onto an agent's needs &mdash; tools to act, resources to ground, prompts to standardise &mdash; and building to the protocol means your integration outlives any single model choice.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>What to Take Away</h2>
+    <p>This is the final deck of a 30-publication series. Across six presentations the throughline is a single arc: from how language models are <em>built</em>, to how they are made <em>useful, safe and efficient</em>, to how they <em>act in the world</em>.</p>
+    <ul>
+        <li><strong>Foundations (01)</strong> &mdash; Transformers, scaling laws and the pre-training recipe established the substrate every later capability is built on.</li>
+        <li><strong>Alignment &amp; Fine-Tuning (02)</strong> &mdash; RLHF, instruction tuning and preference optimisation turned raw predictors into models that follow intent.</li>
+        <li><strong>Reasoning (03)</strong> &mdash; Chain-of-thought, self-consistency and process supervision showed that <em>how</em> a model thinks can be shaped, not just <em>what</em> it knows.</li>
+        <li><strong>Efficient Inference (04)</strong> &mdash; Quantisation, KV-cache tricks, speculative decoding and attention kernels made all of the above affordable to serve.</li>
+        <li><strong>Retrieval &amp; Long Context (05)</strong> &mdash; RAG and long-context techniques grounded models in external, current, verifiable knowledge.</li>
+        <li><strong>Agents &amp; Tool Use (06)</strong> &mdash; ReAct's loop, Toolformer's self-taught tool use, Reflexion's verbal learning, Anthropic's pattern catalogue and MCP's standard protocol close the loop: models that reason, act, observe, reflect, and connect to the world through a shared interface.</li>
+    </ul>
+    <p>The unifying lesson for a practising engineer: <strong>capability comes from composition, not from any single trick</strong>. A strong base model, aligned and made to reason, served efficiently, grounded in retrieved facts, and driven by a disciplined agent loop over standardised tools &mdash; that is the modern LLM system. Each deck is one layer; the value is in how they stack.</p>
+
+    <div class="callout">
+        <div class="callout-label">Where to next</div>
+        <p>You've reached the end of the series. Revisit the full index &mdash; all six presentations and thirty publications &mdash; at the <a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Key_Publications" style="color:var(--accent);">Key LLM Publications series hub</a>, and treat it as a living reading map rather than a one-time pass.</p>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Key_Publications">Key LLM Publications Series</a></p>
+    <p style="margin-top:0.5rem;font-size:0.8rem;"><a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Key_Publications">Back to Series Index</a></p>
+</footer>
+<script>
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.slide').forEach(slide => {
+        slide.style.opacity = '0';
+        slide.style.transform = 'translateY(30px)';
+        slide.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(slide);
+    });
+</script>
+</body>
+</html>
